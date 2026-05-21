@@ -1,12 +1,31 @@
-const BASE_URL = 'http://192.168.137.230:5000/api';
+import { getApiBaseUrl } from './config';
 
 async function request(endpoint, method = 'GET', body = null, token = null) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
-  const res = await fetch(`${BASE_URL}${endpoint}`, options);
-  const data = await res.json();
+
+  let res;
+  try {
+    res = await fetch(`${getApiBaseUrl()}${endpoint}`, options);
+  } catch {
+    throw new Error(
+      'Cannot reach the library server. Start the backend (npm start) and use the same Wi‑Fi as your phone.'
+    );
+  }
+
+  const text = await res.text();
+  let data = {};
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(res.ok ? 'Invalid server response' : `Server error (${res.status})`);
+    }
+  }
+
   if (!res.ok) throw new Error(data.message || 'Something went wrong');
   return data;
 }
@@ -19,8 +38,8 @@ export const authAPI = {
 export const booksAPI = {
   getAll: (token, search, category, sort) => {
     let query = '?';
-    if (search) query += `search=${search}&`;
-    if (category && category !== 'All') query += `category=${category}&`;
+    if (search) query += `search=${encodeURIComponent(search)}&`;
+    if (category && category !== 'All') query += `category=${encodeURIComponent(category)}&`;
     if (sort) query += `sort=${sort}`;
     return request(`/books${query}`, 'GET', null, token);
   },
@@ -35,7 +54,8 @@ export const borrowsAPI = {
   borrow: (token, bookId) => request('/borrows', 'POST', { bookId }, token),
   approve: (token, id, data) => request(`/borrows/${id}/approve`, 'PATCH', data, token),
   reject: (token, id) => request(`/borrows/${id}/reject`, 'PATCH', null, token),
-  return: (token, id) => request(`/borrows/${id}/return`, 'PATCH', null, token),
+  requestReturn: (token, id) => request(`/borrows/${id}/request-return`, 'PATCH', null, token),
+  confirmReturn: (token, id) => request(`/borrows/${id}/return`, 'PATCH', null, token),
   payFine: (token, id) => request(`/borrows/${id}/fine/pay`, 'PATCH', null, token),
   waiveFine: (token, id) => request(`/borrows/${id}/fine/waive`, 'PATCH', null, token),
   getAll: (token, status) => request(`/borrows/all${status ? '?status=' + status : ''}`, 'GET', null, token),
@@ -48,5 +68,6 @@ export const usersAPI = {
   update: (token, id, user) => request(`/users/${id}`, 'PUT', user, token),
   delete: (token, id) => request(`/users/${id}`, 'DELETE', null, token),
   getAdminStats: (token) => request('/users/admin/stats', 'GET', null, token),
-  changePassword: (token, currentPassword, newPassword) => request('/users/me/password', 'PUT', { currentPassword, newPassword }, token),
+  changePassword: (token, currentPassword, newPassword) =>
+    request('/users/me/password', 'PUT', { currentPassword, newPassword }, token),
 };

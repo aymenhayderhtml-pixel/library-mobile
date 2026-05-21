@@ -9,7 +9,7 @@ const borrowSchema = new mongoose.Schema({
   fine: { type: Number, default: 0 },
   fineRate: { type: Number, default: 10 },
   fineStatus: { type: String, enum: ['none', 'unpaid', 'paid', 'waived'], default: 'none' },
-  status: { type: String, enum: ['pending', 'active', 'returned', 'overdue', 'rejected'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'active', 'returned', 'overdue', 'rejected', 'return_requested'], default: 'pending' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Borrow', borrowSchema);

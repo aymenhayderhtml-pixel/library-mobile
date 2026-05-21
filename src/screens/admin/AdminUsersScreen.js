@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, Modal, ActivityIndicator, Platform,
@@ -20,7 +21,9 @@ export default function AdminUsersScreen() {
   const [errorMsg, setErrorMsg] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchUsers(); }, [search, sortBy]);
+  useFocusEffect(
+    useCallback(() => { fetchUsers(); }, [search, sortBy])
+  );
 
   async function fetchUsers() {
     try {
@@ -29,9 +32,11 @@ export default function AdminUsersScreen() {
       const data = await usersAPI.getAll(token, search);
       const list = Array.isArray(data) ? data : [];
       const sorted = [...list].sort((a, b) => {
-        const aVal = (a[sortBy] || '').toLowerCase();
-        const bVal = (b[sortBy] || '').toLowerCase();
-        return aVal.localeCompare(bVal);
+        if (sortBy === 'newest') {
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        }
+        // name A-Z (default)
+        return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
       });
       setUsers(sorted);
     } catch (err) {
@@ -119,14 +124,14 @@ export default function AdminUsersScreen() {
         />
         <View style={styles.sortRow}>
           <Text style={styles.sortLabel}>Sort:</Text>
-          {['name', 'email'].map(s => (
+          {['name', 'newest'].map(s => (
             <TouchableOpacity
               key={s}
               style={[styles.sortChip, sortBy === s && styles.sortChipActive]}
               onPress={() => setSortBy(s)}
             >
               <Text style={[styles.sortText, sortBy === s && styles.sortTextActive]}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
+                {s === 'name' ? 'A–Z' : 'Newest'}
               </Text>
             </TouchableOpacity>
           ))}

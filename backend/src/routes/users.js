@@ -10,7 +10,7 @@ const admin = require('../middleware/admin');
 router.get('/me/stats', auth, async (req, res) => {
   try {
     const borrows = await Borrow.find({ userId: req.user.id });
-    const active = borrows.filter(b => b.status === 'active').length;
+    const active = borrows.filter(b => ['active', 'return_requested'].includes(b.status)).length;
     const overdue = borrows.filter(b => b.status === 'overdue').length;
     const totalFine = borrows.reduce((sum, b) => sum + b.fine, 0);
     res.json({ active, overdue, totalFine });

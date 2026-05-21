@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, ActivityIndicator, Alert
@@ -13,7 +14,9 @@ export default function AdminFinesScreen() {
   const [sortBy, setSortBy] = useState('newest');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchBorrows(); }, []);
+  useFocusEffect(
+    useCallback(() => { fetchBorrows(); }, [])
+  );
 
   async function fetchBorrows() {
     try {
@@ -58,12 +61,10 @@ export default function AdminFinesScreen() {
 
   const sortedBorrows = [...filteredBorrows].sort((a, b) => {
     if (sortBy === 'fine') return b.fine - a.fine;
-    if (sortBy === 'user') {
-      return (a.userId?.name || '').localeCompare(b.userId?.name || '');
-    }
+    // newest (default)
     const aDate = new Date(a.createdAt || a.borrowDate || 0).getTime();
     const bDate = new Date(b.createdAt || b.borrowDate || 0).getTime();
-    return sortBy === 'oldest' ? aDate - bDate : bDate - aDate;
+    return bDate - aDate;
   });
 
   return (
@@ -90,10 +91,8 @@ export default function AdminFinesScreen() {
       <View style={styles.sortRow}>
         <Text style={styles.sortLabel}>Sort:</Text>
         {[
+          { key: 'fine', label: 'Highest Fine' },
           { key: 'newest', label: 'Newest' },
-          { key: 'oldest', label: 'Oldest' },
-          { key: 'fine', label: 'Fine' },
-          { key: 'user', label: 'User' },
         ].map(s => (
           <TouchableOpacity
             key={s.key}

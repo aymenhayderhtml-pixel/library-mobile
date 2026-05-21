@@ -48,7 +48,7 @@ export default function AdminHistoryScreen() {
         return;
       }
       if (action === 'reject') await borrowsAPI.reject(token, id);
-      if (action === 'return') await borrowsAPI.return(token, id);
+      if (action === 'return') await borrowsAPI.confirmReturn(token, id);
       fetchHistory();
     } catch (err) {
       Alert.alert('Error', err.message);
@@ -69,8 +69,10 @@ export default function AdminHistoryScreen() {
     }
   }
 
+  const filterStatus = filter === 'Return Requested' ? 'return_requested' : filter.toLowerCase();
+
   const filteredHistory = (Array.isArray(history) ? history : []).filter(item => {
-    if (filter !== 'All' && (item.status || '').toLowerCase() !== filter.toLowerCase()) return false;
+    if (filter !== 'All' && (item.status || '').toLowerCase() !== filterStatus) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const userName = item.userId?.name?.toLowerCase() || '';
@@ -81,23 +83,15 @@ export default function AdminHistoryScreen() {
   });
 
   const sortedHistory = [...filteredHistory].sort((a, b) => {
-    if (sortBy === 'user') {
-      return (a.userId?.name || '').localeCompare(b.userId?.name || '');
-    }
-    if (sortBy === 'book') {
-      return (a.bookId?.title || '').localeCompare(b.bookId?.title || '');
-    }
     const aDate = new Date(a.createdAt || a.borrowDate || 0).getTime();
     const bDate = new Date(b.createdAt || b.borrowDate || 0).getTime();
     return sortBy === 'oldest' ? aDate - bDate : bDate - aDate;
   });
 
-  const statuses = ['All', 'Pending', 'Active', 'Overdue', 'Returned', 'Rejected'];
+  const statuses = ['All', 'Pending', 'Active', 'Overdue', 'Return Requested', 'Returned', 'Rejected'];
   const sortOptions = [
-    { key: 'newest', label: 'Newest' },
-    { key: 'oldest', label: 'Oldest' },
-    { key: 'user', label: 'User' },
-    { key: 'book', label: 'Book' },
+    { key: 'newest', label: 'Newest First' },
+    { key: 'oldest', label: 'Oldest First' },
   ];
 
   return (
@@ -158,13 +152,14 @@ export default function AdminHistoryScreen() {
               <View style={styles.cardHeader}>
                 <Text style={styles.bookTitle}>{item.bookId?.title}</Text>
                 <Text style={[
-                  styles.statusBadge, 
-                  item.status === 'returned' ? styles.statusReturned : 
-                  item.status === 'active' ? styles.statusActive : 
+                  styles.statusBadge,
+                  item.status === 'returned' ? styles.statusReturned :
+                  item.status === 'active' ? styles.statusActive :
                   item.status === 'overdue' ? styles.statusOverdue :
+                  item.status === 'return_requested' ? styles.statusReturnRequested :
                   item.status === 'rejected' ? styles.statusOverdue : styles.statusPending
                 ]}>
-                  {(item.status || 'unknown').toUpperCase()}
+                  {item.status === 'return_requested' ? 'RETURN REQ.' : (item.status || 'unknown').toUpperCase()}
                 </Text>
               </View>
 
@@ -220,10 +215,10 @@ export default function AdminHistoryScreen() {
                 </View>
               )}
 
-              {(item.status === 'active' || item.status === 'overdue') && (
+              {item.status === 'return_requested' && (
                 <View style={styles.actionRow}>
                   <TouchableOpacity style={[styles.actionBtn, styles.returnBtn]} onPress={() => handleAction('return', item._id)}>
-                    <Text style={styles.actionBtnText}>Mark Returned</Text>
+                    <Text style={styles.actionBtnText}>Confirm Return</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -316,6 +311,7 @@ const styles = StyleSheet.create({
   statusActive: { backgroundColor: '#d8f3dc', color: '#2d6a4f' },
   statusOverdue: { backgroundColor: '#ffe5e5', color: '#e63946' },
   statusPending: { backgroundColor: '#fef0d9', color: '#d97706' },
+  statusReturnRequested: { backgroundColor: '#e8f4fd', color: '#1a6ab1' },
   userName: { fontSize: 14, color: '#666', marginBottom: 12 },
   dateRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   dateLabel: { fontSize: 11, color: '#999', marginBottom: 2 },

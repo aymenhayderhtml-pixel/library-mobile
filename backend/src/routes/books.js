@@ -101,7 +101,10 @@ router.put('/:id', auth, admin, async (req, res) => {
 // Delete book (admin only)
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
-    const activeBorrows = await Borrow.findOne({ bookId: req.params.id, status: { $in: ['active', 'overdue'] } });
+    const activeBorrows = await Borrow.findOne({
+      bookId: req.params.id,
+      status: { $in: ['active', 'overdue', 'return_requested'] },
+    });
     if (activeBorrows) {
       return res.status(400).json({ message: 'Cannot delete book: there are active or overdue borrows' });
     }

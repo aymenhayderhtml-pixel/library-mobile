@@ -35,10 +35,19 @@ router.get('/mine', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { bookId } = req.body;
+    if (!bookId) return res.status(400).json({ message: 'Book ID is required' });
     const book = await Book.findById(bookId);
     if (!book) return res.status(404).json({ message: 'Book not found' });
-    if (book.availableCopies < 1) return res.status(400).json({ message: 'No copies available' });
-    const existing = await Borrow.findOne({ userId: req.user.id, bookId, status: { $in: ['pending', 'active', 'overdue'] } });
+    const copies = Number(book.availableCopies);
+    if (!Number.isFinite(copies) || copies < 1) {
+      return res.status(400).json({ message: 'No copies available' });
+    }
+    // Use string comparison to avoid silent ObjectId cast failures
+    const activeBorrows = await Borrow.find({
+      bookId,
+      status: { $in: ['pending', 'active', 'overdue', 'return_requested'] },
+    });
+    const existing = activeBorrows.find(b => b.userId.toString() === String(req.user.id));
     if (existing) return res.status(400).json({ message: 'You already requested or borrowed this book' });
     
     // Reserve the copy immediately
@@ -93,12 +102,35 @@ router.patch('/:id/reject', auth, admin, async (req, res) => {
   }
 });
 
-// Admin: Return a book
+// User: Request to return a book (admin must confirm)
+router.patch('/:id/request-return', auth, async (req, res) => {
+  try {
+    // findById + .toString() avoids silent ObjectId cast mismatches
+    const borrow = await Borrow.findById(req.params.id);
+    if (!borrow) return res.status(404).json({ message: 'Borrow not found' });
+    if (borrow.userId.toString() !== String(req.user.id)) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    if (!['active', 'overdue'].includes(borrow.status)) {
+      return res.status(400).json({ message: 'Only active or overdue books can be returned' });
+    }
+    borrow.status = 'return_requested';
+    await borrow.save();
+    res.json(borrow);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Admin: Confirm return after user request
 router.patch('/:id/return', auth, admin, async (req, res) => {
   try {
     const borrow = await Borrow.findById(req.params.id);
     if (!borrow) return res.status(404).json({ message: 'Borrow not found' });
     if (borrow.status === 'returned') return res.status(400).json({ message: 'Already returned' });
+    if (borrow.status !== 'return_requested') {
+      return res.status(400).json({ message: 'User has not requested return yet' });
+    }
     const fine = calcFine(borrow.dueDate, new Date(), borrow.fineRate || 10);
     borrow.returnDate = new Date();
     borrow.fine = fine;

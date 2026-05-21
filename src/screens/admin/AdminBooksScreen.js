@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, Modal, Alert, ActivityIndicator,
@@ -21,14 +22,24 @@ export default function AdminBooksScreen() {
   const [publishDate, setPublishDate] = useState('');
   const [quantity, setQuantity] = useState('');
 
-  useEffect(() => { fetchBooks(); }, [search, sortBy]);
+  useFocusEffect(
+    useCallback(() => { fetchBooks(); }, [search, sortBy])
+  );
 
   async function fetchBooks() {
     try {
       setLoading(true);
       const { token } = getStore();
-      const data = await booksAPI.getAll(token, search, null, sortBy);
-      setBooks(Array.isArray(data) ? data : []);
+      // Backend handles 'title' sort; 'newest' is done client-side
+      const apiSort = sortBy === 'newest' ? null : sortBy;
+      const data = await booksAPI.getAll(token, search, null, apiSort);
+      let list = Array.isArray(data) ? data : [];
+      if (sortBy === 'newest') {
+        list = [...list].sort((a, b) =>
+          new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+        );
+      }
+      setBooks(list);
     } catch (err) {
       console.log(err.message);
     } finally {
@@ -107,14 +118,14 @@ export default function AdminBooksScreen() {
         />
         <View style={styles.sortRow}>
           <Text style={styles.sortLabel}>Sort:</Text>
-          {['title', 'author'].map(s => (
+          {['title', 'newest'].map(s => (
             <TouchableOpacity
               key={s}
               style={[styles.sortChip, sortBy === s && styles.sortChipActive]}
               onPress={() => setSortBy(s)}
             >
               <Text style={[styles.sortText, sortBy === s && styles.sortTextActive]}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
+                {s === 'title' ? 'A–Z' : 'Newest'}
               </Text>
             </TouchableOpacity>
           ))}

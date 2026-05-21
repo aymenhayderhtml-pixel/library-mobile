@@ -27,7 +27,7 @@ export default function BooksScreen({ navigation }) {
       setLoading(true);
       const { token } = getStore();
       const data = await booksAPI.getAll(token, search, selectedCategory, sortBy);
-      setBooks(data);
+      setBooks(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err.message);
     } finally {
@@ -91,7 +91,7 @@ export default function BooksScreen({ navigation }) {
       ) : (
         <FlatList
           data={books}
-          keyExtractor={item => item._id}
+          keyExtractor={item => String(item._id || item.id)}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
             <TouchableOpacity

@@ -1,10 +1,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-/**
- * Resolve API host for Expo Go / emulator / physical device.
- * Falls back to localhost (iOS sim) or 10.0.2.2 (Android emulator).
- */
+// figure out the right IP depending on where we're running
 export function getApiBaseUrl() {
   const hostUri =
     Constants.expoConfig?.hostUri ??

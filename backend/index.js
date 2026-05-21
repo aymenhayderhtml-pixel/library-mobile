@@ -13,7 +13,7 @@ app.use('/api/books', require('./src/routes/books'));
 app.use('/api/borrows', require('./src/routes/borrows'));
 app.use('/api/users', require('./src/routes/users'));
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('MongoDB connected');
     const port = process.env.PORT || 5000;

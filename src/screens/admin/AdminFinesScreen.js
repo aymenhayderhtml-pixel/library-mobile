@@ -1,12 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, ActivityIndicator, Alert
 } from 'react-native';
-import { borrowsAPI } from '../../data/api';
-import { DUMMY_FINE_BORROWS } from '../../data/dummy';
-import { getStore } from '../../data/store';
+import { borrowsAPI, getStore } from '../../data/api';
 
 export default function AdminFinesScreen() {
   const [borrows, setBorrows] = useState([]);
@@ -14,9 +11,9 @@ export default function AdminFinesScreen() {
   const [sortBy, setSortBy] = useState('newest');
   const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => { fetchBorrows(); }, [])
-  );
+  useEffect(() => {
+    fetchBorrows();
+  }, []);
 
   async function fetchBorrows() {
     try {
@@ -24,10 +21,9 @@ export default function AdminFinesScreen() {
       const { token } = getStore();
       const data = await borrowsAPI.getAll(token);
       const withFines = data.filter(b => b.fine > 0);
-      setBorrows(withFines.length > 0 ? withFines : DUMMY_FINE_BORROWS);
+      setBorrows(withFines);
     } catch (err) {
       console.log(err.message);
-      setBorrows(DUMMY_FINE_BORROWS);
     } finally {
       setLoading(false);
     }

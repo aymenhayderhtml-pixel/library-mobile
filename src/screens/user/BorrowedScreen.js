@@ -1,11 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, Alert, ActivityIndicator,
 } from 'react-native';
-import { borrowsAPI } from '../../data/api';
-import { getStore } from '../../data/store';
+import { borrowsAPI, getStore } from '../../data/api';
 
 const STATUS_CONFIG = {
   pending:          { label: 'Pending Approval', bg: '#fef0d9', text: '#d97706' },
@@ -20,11 +18,9 @@ export default function BorrowedScreen() {
   const [actionId, setActionId]       = useState(null);   // id being returned right now
   const [confirmId, setConfirmId]     = useState(null);   // id waiting for inline confirm
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchBorrows();
-    }, [])
-  );
+  useEffect(() => {
+    fetchBorrows();
+  }, []);
 
   async function fetchBorrows() {
     try {

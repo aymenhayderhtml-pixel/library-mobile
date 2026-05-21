@@ -1,19 +1,15 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { usersAPI, borrowsAPI } from '../../data/api';
-import { getStore, clearStore } from '../../data/store';
+import { usersAPI, borrowsAPI, getStore, clearStore } from '../../data/api';
 
 export default function AdminDashboardScreen({ navigation }) {
   const [stats, setStats] = useState(null);
   const [overdueUsers, setOverdueUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [])
-  );
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   async function fetchData() {
     try {

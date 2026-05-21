@@ -1,12 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, Modal, ActivityIndicator, Platform,
 } from 'react-native';
-import { usersAPI } from '../../data/api';
-import { getStore } from '../../data/store';
-import { validateEmail, validatePassword, validateName } from '../../data/validate';
+import { usersAPI, getStore, validateEmail, validatePassword, validateName } from '../../data/api';
 
 export default function AdminUsersScreen() {
   const [users, setUsers] = useState([]);
@@ -21,9 +18,9 @@ export default function AdminUsersScreen() {
   const [errorMsg, setErrorMsg] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => { fetchUsers(); }, [search, sortBy])
-  );
+  useEffect(() => {
+    fetchUsers();
+  }, [search, sortBy]);
 
   async function fetchUsers() {
     try {

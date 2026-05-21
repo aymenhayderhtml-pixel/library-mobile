@@ -1,5 +1,33 @@
 import { getApiBaseUrl } from './config';
 
+// simple in-memory auth state
+let _authState = { token: null, user: null };
+
+export function setStore(token, user) {
+  _authState.token = token;
+  _authState.user = user;
+}
+
+export function getStore() {
+  return _authState;
+}
+
+export function clearStore() {
+  _authState = { token: null, user: null };
+}
+
+export function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function validatePassword(pw) {
+  return pw.length >= 6;
+}
+
+export function validateName(n) {
+  return n.trim().length >= 2;
+}
+
 async function request(endpoint, method = 'GET', body = null, token = null) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -12,7 +40,7 @@ async function request(endpoint, method = 'GET', body = null, token = null) {
     res = await fetch(`${getApiBaseUrl()}${endpoint}`, options);
   } catch {
     throw new Error(
-      'Cannot reach the library server. Start the backend (npm start) and use the same Wi‑Fi as your phone.'
+      'Cannot reach the library server. Start the backend (npm start) and use the same Wi-Fi as your phone.'
     );
   }
 

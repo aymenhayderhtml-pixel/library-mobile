@@ -3,8 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert, ActivityIndicator,
 } from 'react-native';
-import { booksAPI, borrowsAPI } from '../../data/api';
-import { getStore } from '../../data/store';
+import { booksAPI, borrowsAPI, getStore } from '../../data/api';
 
 export default function BookDetailScreen({ route, navigation }) {
   const initialBook = route.params?.book;

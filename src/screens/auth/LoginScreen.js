@@ -3,27 +3,32 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
-import { authAPI } from '../../data/api';
-import { setStore } from '../../data/store';
-import { validateEmail } from '../../data/validate';
+import { authAPI, setStore, validateEmail } from '../../data/api';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, route }) {
+  const isAdmin = route?.params?.admin === true;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // TODO: add remember me maybe later
   async function handleLogin() {
-    if (!validateEmail(email)) return Alert.alert('Error', 'Enter a valid email address');
-    if (!password) return Alert.alert('Error', 'Enter your password');
+    if (!validateEmail(email)) return Alert.alert('Error', 'Enter a valid email');
+    if (!password) return Alert.alert('Error', 'Password is required');
     try {
       setLoading(true);
       const data = await authAPI.login(email, password);
-      setStore(data.token, data.user);
-      if (data.user.role === 'admin') {
-        Alert.alert('Admin Account', 'Please use the Admin Login portal.');
-      } else {
-        navigation.replace('UserApp');
+      if (isAdmin && data.user.role !== 'admin') {
+        Alert.alert('Access Denied', 'This portal is for administrators only.');
+        return;
       }
+      if (!isAdmin && data.user.role === 'admin') {
+        Alert.alert('Admin Account', 'Please use the Admin Login portal.');
+        return;
+      }
+      setStore(data.token, data.user);
+      navigation.replace(isAdmin ? 'AdminApp' : 'UserApp');
     } catch (err) {
       Alert.alert('Error', err.message);
     } finally {
@@ -37,12 +42,16 @@ export default function LoginScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
-        <Text style={styles.title}>Library App</Text>
-        <Text style={styles.subtitle}>Sign in to continue</Text>
+        <Text style={[styles.title, isAdmin && { color: '#e63946' }]}>
+          {isAdmin ? 'Admin Portal' : 'Library App'}
+        </Text>
+        <Text style={styles.subtitle}>
+          {isAdmin ? 'Sign in to manage the library' : 'Sign in to continue'}
+        </Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder={isAdmin ? 'Admin Email' : 'Email'}
           placeholderTextColor="#999"
           value={email}
           onChangeText={setEmail}
@@ -58,17 +67,31 @@ export default function LoginScreen({ navigation }) {
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
+        <TouchableOpacity
+          style={[styles.button, isAdmin && { backgroundColor: '#e63946' }]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.buttonText}>{isAdmin ? 'Login as Admin' : 'Login'}</Text>
+          }
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.adminButton} onPress={() => navigation.navigate('AdminLogin')}>
-          <Text style={styles.adminButtonText}>Admin Login</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.link}>Don't have an account? Register</Text>
-        </TouchableOpacity>
+        {isAdmin ? (
+          <TouchableOpacity style={styles.switchBtn} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.switchBtnText}>Go to User Login</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.link}>Don't have an account? Register</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Login', { admin: true })} style={{ marginTop: 12 }}>
+              <Text style={[styles.link, { color: '#999', fontSize: 13 }]}>Admin login</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -97,14 +120,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  link: { color: '#1a1a2e', textAlign: 'center', fontSize: 14, marginBottom: 16 },
-  adminButton: {
+  link: { color: '#1a1a2e', textAlign: 'center', fontSize: 14 },
+  switchBtn: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e63946',
+    borderColor: '#1a1a2e',
   },
-  adminButtonText: { color: '#e63946', fontSize: 16, fontWeight: '600' },
+  switchBtnText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
 });

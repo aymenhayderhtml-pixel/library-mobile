@@ -1,26 +1,22 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert
 } from 'react-native';
-import { usersAPI } from '../../data/api';
-import { getStore, clearStore } from '../../data/store';
+import { usersAPI, getStore, clearStore } from '../../data/api';
 
 export default function UserDashboardScreen({ navigation }) {
   const [stats, setStats] = useState({ active: 0, overdue: 0, totalFine: 0 });
   const [loading, setLoading] = useState(true);
-  const [pwdModalVisible, setPwdModalVisible] = useState(false);
+  const [showPwdModal, setShowPwdModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const { user } = getStore();
   const displayName = (user?.name || '').replace(/\s*updated\s*/gi, '').trim() || 'User';
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchStats();
-    }, [])
-  );
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   async function fetchStats() {
     try {
@@ -47,7 +43,7 @@ export default function UserDashboardScreen({ navigation }) {
       const { token } = getStore();
       await usersAPI.changePassword(token, currentPassword, newPassword);
       Alert.alert('Success', 'Password changed successfully');
-      setPwdModalVisible(false);
+      setShowPwdModal(false);
       setCurrentPassword('');
       setNewPassword('');
     } catch (err) {
@@ -94,12 +90,12 @@ export default function UserDashboardScreen({ navigation }) {
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Borrowed')}>
           <Text style={styles.actionText}>My Borrowed Books</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => setPwdModalVisible(true)}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => setShowPwdModal(true)}>
           <Text style={styles.actionText}>Change Password</Text>
         </TouchableOpacity>
       </View>
 
-      <Modal visible={pwdModalVisible} animationType="slide" transparent>
+      <Modal visible={showPwdModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Change Password</Text>
@@ -108,7 +104,7 @@ export default function UserDashboardScreen({ navigation }) {
             <TouchableOpacity style={styles.saveBtn} onPress={handlePasswordChange}>
               <Text style={styles.saveBtnText}>Change Password</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => { setPwdModalVisible(false); setCurrentPassword(''); setNewPassword(''); }}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowPwdModal(false); setCurrentPassword(''); setNewPassword(''); }}>
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>

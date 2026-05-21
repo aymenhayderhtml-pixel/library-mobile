@@ -1,32 +1,28 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TextInput, TouchableOpacity, ScrollView, ActivityIndicator,
 } from 'react-native';
-import { booksAPI } from '../../data/api';
-import { getStore } from '../../data/store';
+import { booksAPI, getStore } from '../../data/api';
 
 const CATEGORIES = ['All', 'Technology', 'Fiction', 'Science'];
 
 export default function BooksScreen({ navigation }) {
   const [books, setBooks] = useState([]);
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState('All');
   const [sortBy, setSortBy] = useState('title');
   const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchBooks();
-    }, [search, selectedCategory, sortBy])
-  );
+  useEffect(() => {
+    fetchBooks();
+  }, [search, activeCategory, sortBy]);
 
   async function fetchBooks() {
     try {
       setLoading(true);
       const { token } = getStore();
-      const data = await booksAPI.getAll(token, search, selectedCategory, sortBy);
+      const data = await booksAPI.getAll(token, search, activeCategory, sortBy);
       setBooks(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err.message);
@@ -57,10 +53,10 @@ export default function BooksScreen({ navigation }) {
         {CATEGORIES.map(cat => (
           <TouchableOpacity
             key={cat}
-            style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
-            onPress={() => setSelectedCategory(cat)}
+            style={[styles.categoryChip, activeCategory === cat && styles.categoryChipActive]}
+            onPress={() => setActiveCategory(cat)}
           >
-            <Text style={[styles.categoryText, selectedCategory === cat && styles.categoryTextActive]}>
+            <Text style={[styles.categoryText, activeCategory === cat && styles.categoryTextActive]}>
               {cat}
             </Text>
           </TouchableOpacity>

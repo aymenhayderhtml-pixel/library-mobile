@@ -1,10 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, TextInput, ScrollView, Modal
 } from 'react-native';
-import { borrowsAPI } from '../../data/api';
-import { getStore } from '../../data/store';
+import { borrowsAPI, getStore } from '../../data/api';
 
 export default function AdminHistoryScreen() {
   const [history, setHistory] = useState([]);
@@ -18,17 +16,16 @@ export default function AdminHistoryScreen() {
   const [durationDays, setDurationDays] = useState('14');
   const [fineRate, setFineRate] = useState('10');
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchHistory();
-    }, [])
-  );
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   async function fetchHistory() {
     try {
       setLoading(true);
       const { token } = getStore();
       const data = await borrowsAPI.getAll(token);
+      console.log('borrows loaded:', data?.length);
       setHistory(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err.message);

@@ -1,12 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, Modal, Alert, ActivityIndicator,
 } from 'react-native';
-import { booksAPI } from '../../data/api';
-import { getStore } from '../../data/store';
-import { validateName } from '../../data/validate';
+import { booksAPI, getStore, validateName } from '../../data/api';
 
 export default function AdminBooksScreen() {
   const [books, setBooks] = useState([]);
@@ -21,10 +18,11 @@ export default function AdminBooksScreen() {
   const [description, setDescription] = useState('');
   const [publishDate, setPublishDate] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [selectedBook, setSelectedBook] = useState(null);
 
-  useFocusEffect(
-    useCallback(() => { fetchBooks(); }, [search, sortBy])
-  );
+  useEffect(() => {
+    fetchBooks();
+  }, [search, sortBy]);
 
   async function fetchBooks() {
     try {
